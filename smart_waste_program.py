@@ -1,25 +1,17 @@
-
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect
 import sqlite3
 from datetime import datetime
 
 app = Flask(__name__)
+DATABASE = 'waste.db'
 
-DATABASE = "waste.db"
-
-
-# Database connection
 def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
-
-# Create database table
-def create_database():
-
+def init_db():
     conn = get_db()
-
     conn.execute("""
         CREATE TABLE IF NOT EXISTS requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,43 +26,25 @@ def create_database():
             created_at TEXT
         )
     """)
-
     conn.commit()
     conn.close()
 
+init_db()
 
-# Home page
 @app.route("/")
 def home():
+    return render_template("index.html")
 
-    categories = [
-        "Organic",
-        "Plastic",
-        "Paper",
-        "Glass",
-        "Metal",
-        "E-Waste",
-        "Mixed Waste"
-    ]
-
-    return render_template(
-        "index.html",
-        categories=categories
-    )
-
-
-# Submit pickup request
-@app.route("/request-pickup", methods=["POST"])
+@app.route("/request-pickup", methods=["GET", "POST"])
 def request_pickup():
-    try:
+    if request.method == "POST":
         name = request.form["name"]
         phone = request.form["phone"]
         category = request.form["category"]
         address = request.form["address"]
         pickup_date = request.form["pickup_date"]
         pickup_time = request.form["pickup_time"]
-        notes = request.form["notes"]
-
+        notes = request.form.get("notes", "")
         conn = get_db()
         cursor = conn.execute("""
             INSERT INTO requests (name, phone, category, address, pickup_date, pickup_time, notes, status, created_at)
@@ -80,88 +54,19 @@ def request_pickup():
         request_id = cursor.lastrowid
         conn.close()
         return redirect(f"/track?id={request_id}")
-    except Exception as e:
-        print(f"Error: {e}")
-        return f"<h1>Error: {e}</h1>", 500
+    else:
+        categories = ["Organic", "Plastic", "Paper", "Glass", "Metal", "E-Waste", "Mixed Waste"]
+        return render_template("request_pickup.html", categories=categories)
 
-    return redirect(
-        url_for("track", request_id=request_id)
-    )
-
-
-# Track request
 @app.route("/track")
 def track():
-
-    request_id = request.args.get("id")
-
+    req_id = request.args.get("id")
     conn = get_db()
-
-    result = conn.execute(
-        "SELECT * FROM requests WHERE id = ?",
-        (request_id,)
-    ).fetchone()
-
+    req = None
+    if req_id:
+        req = conn.execute("SELECT * FROM requests WHERE id = ?", (req_id,)).fetchone()
     conn.close()
+    return render_template("track.html", request_data=req, request_id=req_id)
 
-    return render_template(
-        "track.html",
-        request=result
-    )
-
-
-# Admin dashboard
-@app.route("/admin")
-def admin():
-
-    conn = get_db()
-
-    requests = conn.execute(
-        "SELECT * FROM requests ORDER BY id DESC"
-    ).fetchall()
-
-    conn.close()
-
-    return render_template(
-        "admin.html",
-        requests=requests
-    )
-
-
-# Update request status
-@app.route(
-    "/update-status/<int:request_id>",
-    methods=["POST"]
-)
-def update_status(request_id):
-
-    status = request.form["status"]
-
-    conn = get_db()
-
-    conn.execute("""
-        UPDATE requests
-        SET status = ?
-        WHERE id = ?
-    """, (
-        status,
-        request_id
-    ))
-
-    conn.commit()
-    conn.close()
-
-    return redirect(
-        url_for("admin")
-    )
-create_database()
-# Start application
 if __name__ == "__main__":
-
-   
-
-    app.run(
-        debug=True,
-        host="0.0.0.0",
-        port=8080
-    )
+    app.run(debug=True)
