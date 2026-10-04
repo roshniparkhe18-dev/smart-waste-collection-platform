@@ -174,8 +174,7 @@ def update_status(request_id):
     return redirect(
         url_for("admin")
     )
-
- create_database()
+create_database()
 # Start application
 if __name__ == "__main__":
 
