@@ -175,11 +175,11 @@ def update_status(request_id):
         url_for("admin")
     )
 
-
+ create_database()
 # Start application
 if __name__ == "__main__":
 
-    create_database()
+   
 
     app.run(
         debug=True,
