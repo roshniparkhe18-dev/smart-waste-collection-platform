@@ -62,47 +62,27 @@ def home():
 # Submit pickup request
 @app.route("/request-pickup", methods=["POST"])
 def request_pickup():
+    try:
+        name = request.form["name"]
+        phone = request.form["phone"]
+        category = request.form["category"]
+        address = request.form["address"]
+        pickup_date = request.form["pickup_date"]
+        pickup_time = request.form["pickup_time"]
+        notes = request.form["notes"]
 
-    name = request.form["name"]
-    phone = request.form["phone"]
-    category = request.form["category"]
-    address = request.form["address"]
-    pickup_date = request.form["pickup_date"]
-    pickup_time = request.form["pickup_time"]
-    notes = request.form["notes"]
-
-    conn = get_db()
-
-    cursor = conn.execute("""
-        INSERT INTO requests
-        (
-            name,
-            phone,
-            category,
-            address,
-            pickup_date,
-            pickup_time,
-            notes,
-            status,
-            created_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        name,
-        phone,
-        category,
-        address,
-        pickup_date,
-        pickup_time,
-        notes,
-        "Pending",
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ))
-
-    request_id = cursor.lastrowid
-
-    conn.commit()
-    conn.close()
+        conn = get_db()
+        cursor = conn.execute("""
+            INSERT INTO requests (name, phone, category, address, pickup_date, pickup_time, notes, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (name, phone, category, address, pickup_date, pickup_time, notes, 'Pending', datetime.now().isoformat()))
+        conn.commit()
+        request_id = cursor.lastrowid
+        conn.close()
+        return redirect(f"/track?id={request_id}")
+    except Exception as e:
+        print(f"Error: {e}")
+        return f"<h1>Error: {e}</h1>", 500
 
     return redirect(
         url_for("track", request_id=request_id)
