@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Request Pickup</title>
+<style>
+body{font-family:Arial;padding:20px}
+input,select,textarea{width:300px;padding:8px;margin:5px}
+button{padding:10px 20px;background:green;color:white;border:none}
+</style>
+</head>
+<body>
+<h2>Request Waste Pickup</h2>
+<form method="POST">
+<input name="name" placeholder="Full Name" required><br>
+<input name="phone" placeholder="Phone Number" required><br>
+<select name="category" required>
+<option value="">Select Category</option>
+{% for cat in categories %}
+<option value="{{ cat }}">{{ cat }}</option>
+{% endfor %}
+</select><br>
+<input name="address" placeholder="Pickup Address" required><br>
+<input type="date" name="pickup_date" required><br>
+<input type="time" name="pickup_time" required><br>
+<textarea name="notes" placeholder="Any notes"></textarea><br>
+<button type="submit">Submit Request</button>
+</form>
+</body>
+</html>
